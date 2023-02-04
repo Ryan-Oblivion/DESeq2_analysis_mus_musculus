@@ -1,0 +1,127 @@
+---
+title: "DESeq2_on_mus"
+output: html_notebook
+---
+```{r}
+library(DESeq2)
+```
+```{r}
+setwd("D:/GEO_sra_seq/ct_genes")
+getwd()
+``
+```
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("pasilla")
+```
+
+
+```{r}
+library("pasilla")
+```
+
+```{r}
+
+# gathering the wild type unstimulated
+# then making a dataframe
+my_data_1 <- read.csv("GSM4983791_WT1_unst_S78_ct_genes.txt" ,sep="\t")
+```
+```{r}
+my_data_2 <- read.csv("GSM4983792_WT2_unst_S79_ct_genes.txt" ,sep="\t")
+
+my_data_3 <- read.csv("GSM4983793_WT3_unst_S80_ct_genes.txt" ,sep="\t")
+```
+
+
+```{r}
+wt_df <- data.frame(row.names=my_data_1[,1], my_data[,2],my_data_2[,2],my_data_3[,2])
+
+old_names <- colnames(wt_df)
+
+new_names <- c("wt1_unst","wt2_unst","wt3_unst")
+
+colnames(wt_df) <- new_names
+colnames(wt_df)
+#wt_df[,row.names= wt_df[,1]
+```
+```{r}
+files <- c("GSM4983797_WT1_3plus28_24h_S60_ct_genes.txt", "GSM4983798_WT2_3plus28_24h_S61_ct_genes.txt","GSM4983799_WT3_3plus28_24h_S62_ct_genes.txt")
+
+#gathering the wild type 24 hour stimulated 
+# then putting them into a dataframe
+wt1_24h <- read.csv("GSM4983797_WT1_3plus28_24h_S60_ct_genes.txt",sep = "\t")
+
+wt2_24h <- read.csv("GSM4983798_WT2_3plus28_24h_S61_ct_genes.txt",sep="\t")
+
+wt3_24h <- read.csv("GSM4983799_WT3_3plus28_24h_S62_ct_genes.txt", sep="\t")
+
+# merging the two dataframes so I can make the data DESeq2 ready
+
+new_wt_unst_24h_df <- data.frame(wt_df,wt1_24h[,2],wt2_24h[,2],wt3_24h[,2])
+```
+
+```{r}
+length(new_wt_unst_24h_df[,1])
+cts <- as.matrix(new_wt_unst_24h_df)
+
+```
+```{r}
+# creating the column data and assigning them a condition to keep track of when comparing data
+
+condition <- c("unstimulated","unstimulated","unstimulated","24h_stimulated","24h_stimulated","24h_stimulated")
+
+coldata <- data.frame(row.names =  colnames(new_wt_unst_24h_df), condition )
+```
+
+```{r}
+# checking to see if all the row names in coldata are equal to the column names in cts
+all(rownames(coldata)==colnames(cts))
+
+```
+
+```{r}
+library("DESeq2")
+
+# running DESeq2 on my dataframe and adding the column data with the design being the condition in the column data
+
+dds <- DESeqDataSetFromMatrix(countData=cts, colData = coldata, design = ~ condition)
+
+dds
+```
+
+
+```{r}
+# just a way to add redundant data but #can be used to add any additional #feature data
+featureData <- data.frame(gene=rownames(cts))
+mcols(dds) <- DataFrame(mcols(dds),featureData)
+mcols(dds)
+```
+
+
+```{r}
+# gathering the results of the DESeq2 object dds and passing that to a variable called res
+dds <- DESeq(dds)
+res <- results(dds)
+res
+```
+
+```{r}
+#res$pvalue
+```
+
+```{r}
+
+# first graph to analyze the gene expression data
+# using plotMA to visualize 
+
+plotMA(res, ylim=c(-2,2))
+png('DESeq2_test_png.png', width = 500, height = 500)
+dev.off()
+```
+```{r}
+
+```
+
